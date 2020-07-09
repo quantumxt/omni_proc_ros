@@ -12,12 +12,18 @@ bool omni_mono_proc::init()
     imgSub = it.subscribe("img_src", 1, &omni_mono_proc::imgCallback, this); //Sub
     imgPub = it.advertise("img_rect", 1);
 
+	//start reconfig
+mp_cb = boost::bind(&omni_mono_proc::dr_callback, this, _1, _2);
+    mp_server.setCallback(mp_cb);
+
     if (!readCalib("/home/xavier/cam_ws/src/omni_proc/param/out_camera_params.xml"))
         return false;
 
     parseCalib(this->fs);
+
     return true;
 }
+
 
 bool omni_mono_proc::readCalib(const std::string& cfile)
 {
@@ -53,6 +59,29 @@ void omni_mono_proc::parseCalib(const cv::FileStorage& fs)
 }
 
 // === CALLBACK & PUBLISHER ===
+void omni_mono_proc::dr_callback(const omni_proc::mono_paramConfig& config, const uint32_t& level)
+{
+
+zoomOut = (float) config.ZOOM_OUT_LEVEL;
+   aspectRatio = (float) config.OUT_ASPECT;
+
+switch(config.OUT_MODE){
+case 1:
+flags_out = cv::omnidir::RECTIFY_CYLINDRICAL;
+break;
+case 2:
+flags_out = cv::omnidir::RECTIFY_STEREOGRAPHIC;
+break;
+case 3:
+flags_out = cv::omnidir::RECTIFY_LONGLATI;
+break;
+case 0:
+default:
+flags_out = cv::omnidir::RECTIFY_PERSPECTIVE;
+}
+   
+}
+
 void omni_mono_proc::imgCallback(const sensor_msgs::ImageConstPtr& imgp)
 {
     try {
@@ -60,9 +89,7 @@ void omni_mono_proc::imgCallback(const sensor_msgs::ImageConstPtr& imgp)
 
         //ROS_WARN("\nRectifying IMG...");
 
-        constexpr float zoomOut{ 5 }; //Best around 2-6, negative would flip image
-        constexpr int flags_out = cv::omnidir::RECTIFY_PERSPECTIVE;
-        constexpr float aspectRatio{ 1.7 };
+      
 
         this->new_size.width = imagePtrRaw->image.cols;
         this->new_size.height = imagePtrRaw->image.rows;
