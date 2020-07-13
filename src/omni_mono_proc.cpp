@@ -1,4 +1,5 @@
 #include "omni_proc/omni_mono_proc.hpp"
+#include "omni_proc/omni_util.hpp"
 
 omni_mono_proc::omni_mono_proc(const ros::NodeHandle& nh_)
 {
@@ -12,74 +13,48 @@ bool omni_mono_proc::init()
     imgSub = it.subscribe("img_src", 1, &omni_mono_proc::imgCallback, this); //Sub
     imgPub = it.advertise("img_rect", 1);
 
-	//start reconfig
-mp_cb = boost::bind(&omni_mono_proc::dr_callback, this, _1, _2);
+    //start reconfig
+    mp_cb = boost::bind(&omni_mono_proc::dr_callback, this, _1, _2);
     mp_server.setCallback(mp_cb);
 
-    if (!readCalib("/home/xavier/cam_ws/src/omni_proc/param/out_camera_params.xml"))
-        return false;
+    //Read & parse
+    omni_util omutil;
 
-    parseCalib(this->fs);
-
-    return true;
-}
-
-
-bool omni_mono_proc::readCalib(const std::string& cfile)
-{
-    cv::FileStorage fs(cfile, cv::FileStorage::READ);
-
-    if (!fs.isOpened()) {
-        ROS_WARN("Error reading calibration file...");
+    if (!omutil.readCalib("/home/xavier/cam_ws/src/omni_proc/param/out_camera_params.xml")) {
+        ROS_WARN("FileStorage is empty!");
         return false;
     }
 
-    cv::FileNode n = fs.getFirstTopLevelNode();
-    if (n.name() != "calibration_time") {
-        ROS_WARN("Invalid calibration file!");
-        return false;
-    }
-    this->fs = fs;
+    //Get the matrices
+    this->kMat = omutil.parseCalib("camera_matrix", "data", 3, 3);
+    this->dMat = omutil.parseCalib("distortion_coefficients", "data", 4, 1);
+    this->xiMat = omutil.parseCalib("xi", "-1", 1, 1);
+
+    omutil.fsdone();
+
     return true;
-}
-
-void omni_mono_proc::parseCalib(const cv::FileStorage& fs)
-{
-    //Get Calibrated Camera matrix (K)
-    cv::FileNode mData = fs["camera_matrix"]["data"];
-    this->kMat = node2array(mData, 3, 3);
-
-    //Get distortion coeff (D): Distortion parameters (k1,k2,p1,p2)
-    cv::FileNode dcf = fs["distortion_coefficients"]["data"];
-    this->dMat = node2array(dcf, 4, 1);
-
-    //Get Xi
-    cv::FileNode node_xi = fs["xi"];
-    this->xiMat = node2array(node_xi, 1, 1);
 }
 
 // === CALLBACK & PUBLISHER ===
 void omni_mono_proc::dr_callback(const omni_proc::mono_paramConfig& config, const uint32_t& level)
 {
+    zoomOut = (float)config.ZOOM_OUT_LEVEL;
+    aspectRatio = (float)config.OUT_ASPECT;
 
-zoomOut = (float) config.ZOOM_OUT_LEVEL;
-   aspectRatio = (float) config.OUT_ASPECT;
-
-switch(config.OUT_MODE){
-case 1:
-flags_out = cv::omnidir::RECTIFY_CYLINDRICAL;
-break;
-case 2:
-flags_out = cv::omnidir::RECTIFY_STEREOGRAPHIC;
-break;
-case 3:
-flags_out = cv::omnidir::RECTIFY_LONGLATI;
-break;
-case 0:
-default:
-flags_out = cv::omnidir::RECTIFY_PERSPECTIVE;
-}
-   
+    switch (config.OUT_MODE) {
+    case 1:
+        flags_out = cv::omnidir::RECTIFY_CYLINDRICAL;
+        break;
+    case 2:
+        flags_out = cv::omnidir::RECTIFY_STEREOGRAPHIC;
+        break;
+    case 3:
+        flags_out = cv::omnidir::RECTIFY_LONGLATI;
+        break;
+    case 0:
+    default:
+        flags_out = cv::omnidir::RECTIFY_PERSPECTIVE;
+    }
 }
 
 void omni_mono_proc::imgCallback(const sensor_msgs::ImageConstPtr& imgp)
@@ -88,8 +63,6 @@ void omni_mono_proc::imgCallback(const sensor_msgs::ImageConstPtr& imgp)
         cv_bridge::CvImagePtr imagePtrRaw{ cv_bridge::toCvCopy(imgp, sensor_msgs::image_encodings::BGR16) };
 
         //ROS_WARN("\nRectifying IMG...");
-
-      
 
         this->new_size.width = imagePtrRaw->image.cols;
         this->new_size.height = imagePtrRaw->image.rows;
@@ -120,34 +93,17 @@ ROS_WARN_STREAM(this->new_size);
     }
 }
 
-// === CV ===
-cv::Mat omni_mono_proc::node2array(const cv::FileNode& param, const int& aWidth, const int& aHeight)
-{
-    int x{ 0 }, y{ 0 };
-    double tMat_array[aHeight][aWidth] = {};
-
-    cv::FileNodeIterator it = param.begin(), it_end = param.end();
-    for (; it != it_end; ++it) {
-        tMat_array[y][x - (3 * y)] = (double)*it; //x have to be offset
-        if (((x + 1) % aHeight == 0) && aHeight > 1)
-            ++y;
-        ++x;
-    }
-    cv::Mat tMat(aWidth, aHeight, CV_64F);
-    std::memcpy(tMat.data, tMat_array, aHeight * aWidth * sizeof(double));
-
-    return tMat;
-}
-
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "omni_mono_proc");
     ros::NodeHandle nh;
 
     omni_mono_proc omp(nh);
-    if (!omp.init())
+    if (!omp.init()) {
+        ROS_WARN("Exiting...");
+        ros::shutdown();
         return -1;
-
+    }
     ros::spin();
 
     return 0;

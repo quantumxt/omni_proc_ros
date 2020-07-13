@@ -134,7 +134,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(omni_mono_proc src/omni_mono_proc.cpp)
+add_executable(omni_mono_proc src/omni_mono_proc.cpp  src/omni_util.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
