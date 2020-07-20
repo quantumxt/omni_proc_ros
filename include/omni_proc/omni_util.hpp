@@ -8,10 +8,10 @@ public:
 
     bool readCalib(const std::string& cfile);
     cv::Mat parseCalib(const std::string& id, const std::string& type, const int& mWidth, const int& mHeight);
-void fsdone();
+    void fsdone();
 
 private:
-cv::FileStorage fs;
+    cv::FileStorage fs;
     cv::Mat node2array(const cv::FileNode& param, const int& aWidth, const int& aHeight);
 };
 

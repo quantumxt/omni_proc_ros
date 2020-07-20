@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <node pkg="omni_proc" type="omni_mono_proc" name="omni_mono">
-<remap from="img_src" to="cam/cam_L/image_raw" />
+<remap from="img_src" to="img_out/image_raw" />
   </node>
 </launch>

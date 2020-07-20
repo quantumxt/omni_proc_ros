@@ -35,11 +35,12 @@ private:
     cv::Mat xiMat;
     cv::Size new_size;
 
+    //Params
+    cv::Point ctr;
     float zoomOut{ 5 }; //Best around 2-6, negative would flip image
     int flags_out = cv::omnidir::RECTIFY_PERSPECTIVE;
     float aspectRatio{ 1.7 };
 
     cv::Matx33f Knew;
-
 };
 

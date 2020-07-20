@@ -38,6 +38,8 @@ bool omni_mono_proc::init()
 // === CALLBACK & PUBLISHER ===
 void omni_mono_proc::dr_callback(const omni_proc::mono_paramConfig& config, const uint32_t& level)
 {
+    ctr.x = config.CENTER_X;
+    ctr.y = config.CENTER_Y;
     zoomOut = (float)config.ZOOM_OUT_LEVEL;
     aspectRatio = (float)config.OUT_ASPECT;
 
@@ -70,19 +72,9 @@ void omni_mono_proc::imgCallback(const sensor_msgs::ImageConstPtr& imgp)
         const int centerX{ this->new_size.width / 2 };
         const int centerY{ this->new_size.height / 2 };
 
-        Knew = cv::Matx33f(this->new_size.width / (aspectRatio * zoomOut), 0, centerX,
-            0, this->new_size.height / zoomOut, centerY,
+        Knew = cv::Matx33f(this->new_size.width / (aspectRatio * zoomOut), 0, ctr.x,
+            0, this->new_size.height / zoomOut, ctr.y,
             0, 0, 1);
-
-        /*
-ROS_WARN_STREAM(imagePtrRaw->image);
-ROS_WARN_STREAM(this->kMat);
-ROS_WARN_STREAM(this->dMat);
-ROS_WARN_STREAM(this->xiMat);
-ROS_WARN_STREAM( flags_out);
-ROS_WARN_STREAM(Knew);
-ROS_WARN_STREAM(this->new_size);
-*/
 
         cv::omnidir::undistortImage(imagePtrRaw->image, imagePtrRaw->image, this->kMat, this->dMat, this->xiMat, flags_out, Knew, this->new_size);
 
