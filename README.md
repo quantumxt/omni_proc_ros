@@ -56,7 +56,7 @@ The image list would be using OpenCV Storage `xml` format, which follows this te
 
 #### Mono image list
 The imagelist would be the same as above, ensure that the full image path is used instead of relative path.
-```
+```xml
 <?xml version="1.0"?>
 <opencv_storage>
 <images>
@@ -102,7 +102,7 @@ $ ./omni_calib [IMG_LIST]  [CHECKBOARD_HORIZONTAL_POINTS]   [CHECKBOARD_VERTICAL
 
 > **Note:** Ensure that the both checkerboard horizontal & vertical points are more than 2, else the calibration wouldn't work!
 
-At the end of the calibration, the numberof images used would be stated below.
+At the end of the calibration, the number of images used would be stated below.
 ![](assets/omni_mono_btm.png)
 
 #### omni_calib_stereo
@@ -122,7 +122,7 @@ $ ./omni_calib_stereo [IMG_LIST_LEFT]  [IMG_LIST_RIGHT]  [CHECKBOARD_HORIZONTAL_
 
 > **Note:** Ensure that the both checkerboard horizontal & vertical points are more than 2, else the calibration wouldn't work!
 
-At the end of the calibration, the numberof images used would be stated below.
+At the end of the calibration, the number of images used would be stated below.
 ![](assets/omni_st_btm.png)
 
 
