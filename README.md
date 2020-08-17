@@ -36,7 +36,13 @@ $ cd build
 $ ./omni_calib [Parameters]
 ```
 
-More details are available below.
+More details on the usage is available in _Calibration executables_ section below.
+
+### Obtaining the images
+
+The images to be used for the calibration could be obtained via the ROS [`camera_calibration` package](http://wiki.ros.org/camera_calibration). Perform the calibration via `cameracalibrator.py`, and click "Save" after the calibration is done (after all the gauge are green). A `calibrationdata.tar.gz` would be saved in the `/tmp/` directory. Uncompress the file, extract the images and save it in a new directory.
+
+> The calibration info from the camera_calibration would **not be used**.
 
 ### Image list
 
